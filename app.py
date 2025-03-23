@@ -2,7 +2,7 @@ import os
 import streamlit as st
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_openai import OpenAI
 from langchain.document_loaders import TextLoader
