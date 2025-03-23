@@ -6,7 +6,7 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_openai import OpenAI
 from langchain.document_loaders import TextLoader
-from openai.error import RateLimitError, APIError
+from openai import OpenAIError
 
 # Load OpenAI API Key from Streamlit Secrets
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -57,9 +57,7 @@ if st.button("Get Answer"):
 
             try:
                 return qa.run(query)
-            except RateLimitError:
-                st.error("🚨 OpenAI API rate limit exceeded. Try again later.")
-            except APIError as e:
+            except OpenAIError as e:
                 st.error(f"⚠️ OpenAI API error: {str(e)}")
 
         response = ask_question(query)
