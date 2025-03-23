@@ -6,6 +6,8 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_openai import OpenAI
 from langchain.document_loaders import TextLoader
+import time
+from openai.error import RateLimitError, APIError
 
 # Load OpenAI API Key from Streamlit Secrets
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
@@ -33,7 +35,7 @@ if uploaded_file:
         docs = text_splitter.split_documents(documents)
 
         # Create embeddings and vector store
-        embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
+embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY, model="text-embedding-ada-002")
         vectorstore = FAISS.from_documents(docs, embeddings)
 
         # Save the vector database
@@ -48,15 +50,15 @@ query = st.text_input("🔍 Ask a question related to the policy")
 if st.button("Get Answer"):
     if query:
         # Function to fetch answer from policy
-        def ask_question(query):
-            embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY)
-            vectorstore = FAISS.load_local("policy_vector_db", embeddings)
-            retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
-            qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=OPENAI_API_KEY), retriever=retriever)
-            return qa.run(query)
+       def ask_question(query):
+    embeddings = OpenAIEmbeddings(openai_api_key=OPENAI_API_KEY, model="text-embedding-ada-002")
+    vectorstore = FAISS.load_local("policy_vector_db", embeddings)
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+    qa = RetrievalQA.from_chain_type(llm=OpenAI(openai_api_key=OPENAI_API_KEY), retriever=retriever)
 
-        response = ask_question(query)
-        st.markdown("### 📢 Answer:")
-        st.write(response)
-    else:
-        st.warning("⚠️ Please enter a question.")
+    try:
+        return qa.run(query)
+    except RateLimitError:
+        st.error("🚨 OpenAI API rate limit exceeded. Try again later.")
+    except APIError as e:
+        st.error(f"⚠️ OpenAI API error: {str(e)}")
